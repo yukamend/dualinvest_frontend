@@ -18,7 +18,7 @@ import { routes } from 'constants/routes'
 import useBreakpoint from 'hooks/useBreakpoint'
 import CurrencyLogo from 'components/essential/CurrencyLogo'
 import { ReactComponent as UpperRightIcon } from 'assets/componentsIcon/upper_right_icon.svg'
-import { useAccountRecord } from 'hooks/useDualInvestData'
+import { useAccountRecord } from 'hooks/useAccountData'
 import Spinner from 'components/Spinner'
 import { ExternalLink } from 'theme/components'
 import { getEtherscanLink } from 'utils/index'
@@ -37,9 +37,11 @@ enum BalanceTableHeaderIndex {
   actions
 }
 
-const RecordType: { [key in number]: 'withdraw' | 'deposit' } = {
+const RecordType: { [key in number]: 'withdraw' | 'deposit' | 'vault deposit' | 'vault withdraw' } = {
   1: 'deposit',
-  2: 'withdraw'
+  2: 'withdraw',
+  3: 'vault deposit',
+  4: 'vault withdraw'
 }
 
 const BalanceTableHeader = ['', 'Deposit Amount', 'Available', 'Investing(Locked)', 'PnL', '']
@@ -174,65 +176,6 @@ export default function Dashboard() {
           ]
         })
       : []
-    // }) [
-    //     [
-    //       <TokenHeader key="btc" token={CURRENCIES.BTC} />,
-    //       accountBalances?.BTC?.totalInvest ?? '-',
-    //       accountBalances?.BTC?.available ?? '-',
-    //       accountBalances?.BTC?.locked ?? '-',
-    //       accountBalances?.BTC?.pnl ?? '-',
-    //       <BalanceActions
-    //         key="btc1"
-    //         onDeposit={() => {
-    //           setCurrentCurrency(CURRENCIES.BTC)
-    //           handleDepositOpen()
-    //         }}
-    //         onWithdraw={() => {
-    //           setCurrentCurrency(CURRENCIES.BTC)
-    //           handleWithdrawOpen()
-    //         }}
-    //         buyHref={'https://www.pancakeswap.finance/swap?outputCurrency=' + CURRENCIES.BTC.address}
-    //       />
-    //     ],
-    //     [
-    //       <TokenHeader key="eth" token={CURRENCIES.ETH} />,
-    //       accountBalances?.ETH?.totalInvest ?? '-',
-    //       accountBalances?.ETH?.available ?? '-',
-    //       accountBalances?.ETH?.locked ?? '-',
-    //       accountBalances?.ETH?.pnl ?? '-',
-    //       <BalanceActions
-    //         key="eth1"
-    //         onDeposit={() => {
-    //           setCurrentCurrency(CURRENCIES.ETH)
-    //           handleDepositOpen()
-    //         }}
-    //         onWithdraw={() => {
-    //           setCurrentCurrency(CURRENCIES.ETH)
-    //           handleWithdrawOpen()
-    //         }}
-    //         buyHref={'https://www.pancakeswap.finance/swap?outputCurrency=' + CURRENCIES.ETH.address}
-    //       />
-    //     ],
-    //     [
-    //       <TokenHeader key="usdt" token={CURRENCIES.USDT} />,
-    //       accountBalances?.USDT?.totalInvest ?? '-',
-    //       accountBalances?.USDT?.available ?? '-',
-    //       accountBalances?.USDT?.locked ?? '-',
-    //       accountBalances?.USDT?.pnl ?? '-',
-    //       <BalanceActions
-    //         key="usdt1"
-    //         onDeposit={() => {
-    //           setCurrentCurrency(CURRENCIES.USDT)
-    //           handleDepositOpen()
-    //         }}
-    //         onWithdraw={() => {
-    //           setCurrentCurrency(CURRENCIES.USDT)
-    //           handleWithdrawOpen()
-    //         }}
-    //         buyHref={'https://www.pancakeswap.finance/swap?outputCurrency=' + CURRENCIES.USDT.address}
-    //       />
-    //     ]
-    //   ]
   }, [accountBalances, handleDepositOpen, handleWithdrawOpen])
 
   if (!account)

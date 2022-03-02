@@ -69,7 +69,8 @@ export enum RECUR_TOGGLE_STATUS {
 }
 
 export function useRecurToggle(
-  curAddress: string | undefined
+  curAddress: string | undefined,
+  vaultAddress: string | undefined
 ): {
   recurStatus: RECUR_TOGGLE_STATUS | null
   toggleRecur: (setting: RECUR_TOGGLE_STATUS | null) => void
@@ -85,13 +86,15 @@ export function useRecurToggle(
           ? {
               account,
               currency: curAddress,
-              sign: SHA1(`@#MATTER@#invest#${account}#$${curAddress}#$`).toString()
+              investCurrency: vaultAddress,
+              sign: SHA1(`@#MATTER@#invest#${account}#$${curAddress}#$${vaultAddress}#$`).toString()
             }
           : {
               account,
               currency: curAddress,
+              investCurrency: vaultAddress,
               type: setting,
-              sign: SHA1(`@#MATTER@#invest#${account}#$${curAddress}#$${setting}#$`).toString()
+              sign: SHA1(`@#MATTER@#invest#${account}#$${curAddress}#$${vaultAddress}#$${setting}#$`).toString()
             }
       ).then(r => {
         if (r.data.data) {
@@ -99,7 +102,7 @@ export function useRecurToggle(
         }
       })
     },
-    [account, curAddress]
+    [account, curAddress, vaultAddress]
   )
 
   useEffect(() => {
@@ -115,23 +118,35 @@ export function useRecurToggle(
   }, [status, callback])
 }
 
-export function useRecurActiveOrderCount(curSymbol: string | undefined) {
+export function useRecurActiveOrderCount(
+  vaultSymbol: string | undefined,
+  curSymbol: string | undefined,
+  refresh: number
+) {
   const [count, setCount] = useState(0)
   const { account } = useActiveWeb3React()
 
   const promiseFn = useCallback(() => {
     if (!account) return new Promise((resolve, reject) => reject(null))
-    return Axios.get<OrderRecord[]>('getOrderRecord', { account, investType: INVEST_TYPE.recur, currency: curSymbol })
-  }, [account, curSymbol])
-
-  const callbackFn = useCallback(r => {
-    if (!r.data.data.records) return
-    const list = r.data.data.records.filter((record: OrderRecord) => {
-      return [InvestStatus.Ordered, InvestStatus.ReadyToSettle].includes(record.investStatus)
+    return Axios.get<OrderRecord[]>('getOrderRecord', {
+      address: account,
+      investType: INVEST_TYPE.recur,
+      currency: vaultSymbol,
+      investCurrency: curSymbol
     })
+  }, [account, curSymbol, vaultSymbol])
 
-    setCount(list.length)
-  }, [])
+  const callbackFn = useCallback(
+    r => {
+      if (!r.data.data.records) return
+      const list = r.data.data.records.filter((record: OrderRecord) => {
+        return [InvestStatus.Ordered, InvestStatus.ReadyToSettle].includes(record.investStatus)
+      })
+      setCount(list.length)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [refresh]
+  )
 
   usePollingWithMaxRetries(curSymbol ? promiseFn : undefined, callbackFn, 300000)
 

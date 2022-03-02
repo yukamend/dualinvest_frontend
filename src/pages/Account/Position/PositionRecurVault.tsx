@@ -32,6 +32,7 @@ export enum PositionMoreHeaderIndex {
 }
 
 export enum PositionTableHeaderIndex {
+  token,
   investAmount,
   subscribedTime,
   apy,
@@ -130,7 +131,7 @@ export default function PositionRecur() {
                 }}
               >
                 {idx === PositionMoreHeaderIndex.Status ? (
-                  <Box margin="0 auto" width="max-content">
+                  <Box margin="0 52px 0 auto" width="max-content">
                     {datum}
                   </Box>
                 ) : (
@@ -147,7 +148,7 @@ export default function PositionRecur() {
         )
         return [
           <Box key="token" display="flex" alignItems="center" gap={13}>
-            <CurrencyLogo currency={CURRENCIES[currency]} size="22px" />
+            <CurrencyLogo currency={CURRENCIES[investCurrency]} size="22px" />
             <Typography fontSize={16}>{CURRENCIES[currency].symbol}</Typography>
           </Box>,
           `${investAmount}(${amount})`,
@@ -198,7 +199,7 @@ export default function PositionRecur() {
                       Please visit specific recurring page to cancel your recurring plan
                     </Typography>
                   </Box>
-                  <Button height="32px" width="120px">
+                  <Button height="32px" width="120px" onClick={handleGoInvest}>
                     Adjust
                   </Button>
                 </Box>

@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react'
 import { Box, Alert, Typography } from '@mui/material'
+import dayjs from 'dayjs'
 import VaultCard from 'components/MgmtPage/VaultCard'
 import VaultFormComponent from 'components/MgmtPage/VaultForm'
 import { useActiveWeb3React } from 'hooks'
@@ -18,7 +19,12 @@ import TransactionSubmittedModal from 'components/Modal/TransactionModals/Transa
 import RedeemConfirmModal from './RedeemConfirmModal'
 import InvestConfirmModal from './InvestConfirmModal'
 import { feeRate } from 'constants/index'
-import dayjs from 'dayjs'
+
+enum ErrorType {
+  insufficientBalance = 'Insufficient Balance'
+}
+
+let refresh = 0
 
 export default function VaultForm({
   product,
@@ -45,12 +51,12 @@ export default function VaultForm({
   const { redeemCallback, investCallback } = useRecurCallback()
   const { pnl } = useRecurPnl(currencySymbol)
   const { autoLockedBalance, autoBalance, autoBalanceRaw } = useRecurBalance(currency, investCurrency)
-  const { recurStatus, toggleRecur } = useRecurToggle(product ? investCurrency?.address : undefined)
+  const { recurStatus, toggleRecur } = useRecurToggle(investCurrency?.address, currency?.address)
   const { account } = useActiveWeb3React()
   const contractBalance = useDualInvestBalance(investCurrency)
   const { showModal, hideModal } = useModal()
   const addPopup = useTransactionAdder()
-  const activeOrderCount = useRecurActiveOrderCount(investCurrency?.symbol)
+  const activeOrderCount = useRecurActiveOrderCount(currency?.symbol, investCurrency?.symbol, refresh)
 
   const formData = useMemo(
     () => ({
@@ -110,6 +116,7 @@ export default function VaultForm({
       const r = await investCallback(val, currency.address, investCurrency.address)
       hideModal()
 
+      toggleRecur(RECUR_TOGGLE_STATUS.open)
       addPopup(r, {
         summary: `Subscribed ${(
           +investAmount * (product ? product.multiplier * (product.type === 'CALL' ? 1 : +product.strikePrice) : 1)
@@ -121,12 +128,24 @@ export default function VaultForm({
       })
       setInvestAmount('')
       showModal(<TransactionSubmittedModal />)
+      refresh++
     } catch (e) {
       setInvestAmount('')
       showModal(<MessageBox type="error">{(e as any)?.error?.message || (e as Error).message || e}</MessageBox>)
       console.error(e)
     }
-  }, [currency, investCallback, product, investCurrency, showModal, investAmount, hideModal, addPopup, setInvestAmount])
+  }, [
+    currency,
+    investCallback,
+    product,
+    investCurrency,
+    showModal,
+    investAmount,
+    hideModal,
+    addPopup,
+    setInvestAmount,
+    toggleRecur
+  ])
 
   const handleRedeem = useCallback(async () => {
     if (!investCurrency || !redeemCallback || !product || !currency) return
@@ -148,6 +167,17 @@ export default function VaultForm({
       console.error(e)
     }
   }, [investCurrency, redeemCallback, product, currency, showModal, autoBalanceRaw, addPopup, autoBalance, hideModal])
+
+  const error = useMemo(() => {
+    if (!product || !contractBalance) return ''
+    let str = ''
+    if (
+      investAmount !== '' &&
+      +contractBalance < +investAmount * +product.multiplier * (product.type === 'CALL' ? 1 : +product.strikePrice)
+    )
+      str = ErrorType.insufficientBalance
+    return str
+  }, [contractBalance, investAmount, product])
 
   return (
     <>
@@ -226,6 +256,7 @@ export default function VaultForm({
           activeOrder={activeOrderCount}
           vaultForm={
             <VaultFormComponent
+              error={error}
               redeemDisabled={!product || !+autoBalance}
               investDisabled={!product || !investAmount}
               onWithdraw={handleRedeemConfirmOpen}
